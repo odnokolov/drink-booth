@@ -45,20 +45,20 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
   const BLOCK_STEP   = 54;  // 48px block + 6px gap
   const SCROLL_AFTER = 5;  // start scrolling after 6th block (index 5, 0-based)
 
-  // Scroll right by 1 block each time a new block is added (after 6th)
+  // Scroll right by 1 block each time a new block is added (only after 6th)
   useEffect(() => {
     if (!running && slotsRef.current) {
       const idx = program.length - 1;
-      const target = idx > SCROLL_AFTER ? (idx - SCROLL_AFTER) * BLOCK_STEP : 0;
-      slotsRef.current.scrollTo({ left: target, behavior: 'smooth' });
+      if (idx > SCROLL_AFTER) {
+        slotsRef.current.scrollTo({ left: (idx - SCROLL_AFTER) * BLOCK_STEP, behavior: 'smooth' });
+      }
     }
   }, [program.length, running]);
 
-  // Follow active block during execution with same logic
+  // Follow active block during execution (only after 6th)
   useEffect(() => {
-    if (activeBlock !== null && slotsRef.current) {
-      const target = activeBlock > SCROLL_AFTER ? (activeBlock - SCROLL_AFTER) * BLOCK_STEP : 0;
-      slotsRef.current.scrollTo({ left: target, behavior: 'smooth' });
+    if (activeBlock !== null && activeBlock > SCROLL_AFTER && slotsRef.current) {
+      slotsRef.current.scrollTo({ left: (activeBlock - SCROLL_AFTER) * BLOCK_STEP, behavior: 'smooth' });
     }
   }, [activeBlock]);
 
