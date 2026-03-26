@@ -42,17 +42,23 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
 
   useEffect(() => { resetLevel(level); }, [level, resetLevel]);
 
-  // Scroll to the end when a new block is added
+  const BLOCK_STEP   = 54;  // 48px block + 6px gap
+  const SCROLL_AFTER = 5;  // start scrolling after 6th block (index 5, 0-based)
+
+  // Scroll right by 1 block each time a new block is added (after 6th)
   useEffect(() => {
     if (!running && slotsRef.current) {
-      slotsRef.current.scrollTo({ left: slotsRef.current.scrollWidth, behavior: 'smooth' });
+      const idx = program.length - 1;
+      const target = idx > SCROLL_AFTER ? (idx - SCROLL_AFTER) * BLOCK_STEP : 0;
+      slotsRef.current.scrollTo({ left: target, behavior: 'smooth' });
     }
   }, [program.length, running]);
 
-  // Scroll to the active block during execution
+  // Follow active block during execution with same logic
   useEffect(() => {
-    if (activeBlock !== null && blockRefs.current[activeBlock]) {
-      blockRefs.current[activeBlock].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    if (activeBlock !== null && slotsRef.current) {
+      const target = activeBlock > SCROLL_AFTER ? (activeBlock - SCROLL_AFTER) * BLOCK_STEP : 0;
+      slotsRef.current.scrollTo({ left: target, behavior: 'smooth' });
     }
   }, [activeBlock]);
 
@@ -187,9 +193,9 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
               </button>
             );
           })}
-          {Array.from({ length: level.maxBlocks - program.length }, (_, i) => (
-            <div key={`empty-${i}`} className="prog-slot-empty" />
-          ))}
+          {program.length < level.maxBlocks && (
+            <div key="empty-next" className="prog-slot-empty" />
+          )}
         </div>
       </div>
 
