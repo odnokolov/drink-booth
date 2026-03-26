@@ -3,6 +3,8 @@ import { LEVELS } from '../lib/gameLogic';
 import { saveSettings, resetSettings } from '../lib/adminSettings';
 
 export default function AdminPanel({ settings, onSave }) {
+  if (!settings?.drinks) return <div className="settings-loading">⏳</div>;
+
   const [drinks, setDrinks] = useState(() => settings.drinks.map(d => ({ ...d })));
   const [levels, setLevels] = useState(() => settings.levels.map(l => ({ ...l })));
   const [status, setStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
