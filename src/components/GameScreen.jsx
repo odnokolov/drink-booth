@@ -1,16 +1,18 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { BLOCK_TYPES, LEVELS, executeProgram, DIR_ANGLE } from '../lib/gameLogic';
 
 const STEP_DELAY = 500; // ms per animation step
 
 export default function GameScreen({ onWin, levels: adminLevels }) {
-  const activeLevels = adminLevels
-    .filter(l => l.enabled !== false)
-    .map(adminL => {
-      const base = LEVELS.find(l => l.id === adminL.id);
-      return base ? { ...base, hint: adminL.hint, maxBlocks: adminL.maxBlocks } : null;
-    })
-    .filter(Boolean);
+  const activeLevels = useMemo(() =>
+    adminLevels
+      .filter(l => l.enabled !== false)
+      .map(adminL => {
+        const base = LEVELS.find(l => l.id === adminL.id);
+        return base ? { ...base, hint: adminL.hint, maxBlocks: adminL.maxBlocks } : null;
+      })
+      .filter(Boolean),
+  [adminLevels]);
 
   const [levelIdx, setLevelIdx] = useState(0);
   const level = activeLevels[levelIdx] ?? LEVELS[0];
