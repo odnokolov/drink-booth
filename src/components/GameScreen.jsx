@@ -3,9 +3,17 @@ import { BLOCK_TYPES, LEVELS, executeProgram, DIR_ANGLE } from '../lib/gameLogic
 
 const STEP_DELAY = 500; // ms per animation step
 
-export default function GameScreen({ onWin }) {
+export default function GameScreen({ onWin, levels: adminLevels }) {
+  const activeLevels = adminLevels
+    .filter(l => l.enabled !== false)
+    .map(adminL => {
+      const base = LEVELS.find(l => l.id === adminL.id);
+      return base ? { ...base, hint: adminL.hint, maxBlocks: adminL.maxBlocks } : null;
+    })
+    .filter(Boolean);
+
   const [levelIdx, setLevelIdx] = useState(0);
-  const level = LEVELS[levelIdx];
+  const level = activeLevels[levelIdx] ?? LEVELS[0];
 
   const [program, setProgram]     = useState([]);
   const [running, setRunning]     = useState(false);
@@ -75,8 +83,8 @@ export default function GameScreen({ onWin }) {
               setErrorBlock(i - 1);
               setMessage({ text: error + ' Попробуй снова!', type: 'error' });
             } else if (success) {
-              if (levelIdx < LEVELS.length - 1) {
-                setMessage({ text: '✅ Отлично! Переходим к уровню 2...', type: 'success' });
+              if (levelIdx < activeLevels.length - 1) {
+                setMessage({ text: '✅ Отлично! Следующий уровень...', type: 'success' });
                 setTimeout(() => setLevelIdx(i => i + 1), 1500);
               } else {
                 setMessage({ text: '🎉 Все уровни пройдены!', type: 'success' });

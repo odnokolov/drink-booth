@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { DRINKS } from '../lib/gameLogic';
 import { saveContact } from '../lib/airtable';
 
-export default function ContactForm({ onSubmit }) {
+export default function ContactForm({ onSubmit, drinks: DRINKS }) {
   const [name,    setName]    = useState('');
   const [contact, setContact] = useState('');
   const [drink,   setDrink]   = useState('');
