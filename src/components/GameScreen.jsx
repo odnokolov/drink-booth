@@ -24,7 +24,9 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
   const [message, setMessage]     = useState(null); // {text, type: 'error'|'success'}
   const [activeBlock, setActiveBlock] = useState(null); // index of executing block, or null
   const [errorBlock, setErrorBlock]   = useState(null); // index of block that caused error
-  const timerRef = useRef([]);
+  const timerRef    = useRef([]);
+  const slotsRef    = useRef(null);
+  const blockRefs   = useRef({});
 
   const resetLevel = useCallback((lvl) => {
     setProgram([]);
@@ -39,6 +41,20 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
   }, []);
 
   useEffect(() => { resetLevel(level); }, [level, resetLevel]);
+
+  // Scroll to the end when a new block is added
+  useEffect(() => {
+    if (!running && slotsRef.current) {
+      slotsRef.current.scrollTo({ left: slotsRef.current.scrollWidth, behavior: 'smooth' });
+    }
+  }, [program.length, running]);
+
+  // Scroll to the active block during execution
+  useEffect(() => {
+    if (activeBlock !== null && blockRefs.current[activeBlock]) {
+      blockRefs.current[activeBlock].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, [activeBlock]);
 
   const addBlock = (type) => {
     if (running) return;
@@ -152,7 +168,7 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
         <div className="program-label">
           Программа <span className="block-count">{program.length}/{level.maxBlocks}</span>
         </div>
-        <div className="program-slots">
+        <div className="program-slots" ref={slotsRef}>
           {program.map((block, i) => {
             const bt = BLOCK_TYPES.find(b => b.id === block.type);
             const isActive = activeBlock === i;
@@ -160,6 +176,7 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
             return (
               <button
                 key={block.id}
+                ref={el => { blockRefs.current[i] = el; }}
                 className={`prog-block${isActive ? ' prog-block--active' : ''}${isError ? ' prog-block--error' : ''}`}
                 style={{ background: bt.color }}
                 onClick={() => removeBlock(block.id)}
