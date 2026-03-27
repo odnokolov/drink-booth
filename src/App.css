@@ -495,6 +495,25 @@ button { font-family: inherit; cursor: pointer; border: none; }
 }
 .btn-download:hover  { opacity: .9; }
 .btn-download:active { transform: scale(.97); }
+
+.btn-cases {
+  display: block;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .2s, transform .1s;
+  font-family: inherit;
+}
+.btn-cases:hover  { opacity: .9; }
+.btn-cases:active { transform: scale(.97); }
 .instr-icon { font-size: 26px; flex-shrink: 0; }
 
 .settings-loading {

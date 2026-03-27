@@ -85,6 +85,15 @@ export default function QRScreen({ token, name, drink, onRestart }) {
         )}
       </div>
 
+      <a
+        className="btn-cases"
+        href="https://hackathon.rusindustrial.ai"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        🤖 Ознакомиться с кейсами
+      </a>
+
       <button className="btn-ghost" onClick={onRestart}>
         Сыграть ещё раз
       </button>
