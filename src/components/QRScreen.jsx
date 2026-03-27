@@ -91,7 +91,7 @@ export default function QRScreen({ token, name, drink, onRestart }) {
         target="_blank"
         rel="noopener noreferrer"
       >
-        🤖 Ознакомиться с кейсами
+        Где работает робот?
       </a>
 
       <button className="btn-ghost" onClick={onRestart}>
