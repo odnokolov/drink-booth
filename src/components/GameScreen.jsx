@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { BLOCK_TYPES, LEVELS, executeProgram, DIR_ANGLE } from '../lib/gameLogic';
+import { BLOCK_TYPES, LEVELS, executeProgram } from '../lib/gameLogic';
 
 const STEP_DELAY = 500; // ms per animation step
 
@@ -9,7 +9,7 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
       .filter(l => l.enabled !== false)
       .map(adminL => {
         const base = LEVELS.find(l => l.id === adminL.id);
-        return base ? { ...base, hint: adminL.hint, maxBlocks: adminL.maxBlocks } : null;
+        return base ? { ...base, hint: adminL.hint, maxBlocks: base.maxBlocks } : null;
       })
       .filter(Boolean),
   [adminLevels]);
@@ -24,18 +24,23 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
   const [message, setMessage]     = useState(null); // {text, type: 'error'|'success'}
   const [activeBlock, setActiveBlock] = useState(null); // index of executing block, or null
   const [errorBlock, setErrorBlock]   = useState(null); // index of block that caused error
+  const [burstCells, setBurstCells]   = useState({}); // snow-cleared burst animation keys
   const timerRef    = useRef([]);
   const slotsRef    = useRef(null);
   const blockRefs   = useRef({});
+  const clearedRef  = useRef(new Set());
 
   const resetLevel = useCallback((lvl) => {
     setProgram([]);
     setRunning(false);
     setRobotPos({ col: lvl.robot.col, row: lvl.robot.row, dir: lvl.robot.dir });
-    setClearedCells(new Set([`${lvl.robot.col},${lvl.robot.row}`]));
+    const start = new Set([`${lvl.robot.col},${lvl.robot.row}`]);
+    clearedRef.current = start;
+    setClearedCells(start);
     setMessage(null);
     setActiveBlock(null);
     setErrorBlock(null);
+    setBurstCells({});
     timerRef.current.forEach(clearTimeout);
     timerRef.current = [];
   }, []);
@@ -78,10 +83,12 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
     setMessage(null);
     setActiveBlock(null);
     setErrorBlock(null);
+    setBurstCells({});
     setRunning(true);
 
     // Re-init cleared cells with start position
     const startCleared = new Set([`${level.robot.col},${level.robot.row}`]);
+    clearedRef.current = new Set(startCleared);
     setClearedCells(startCleared);
     setRobotPos({ col: level.robot.col, row: level.robot.row, dir: level.robot.dir });
 
@@ -94,6 +101,26 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
         const remaining = new Set(step.cleared);
         const cleared = new Set([...allSnow].filter(k => !remaining.has(k)));
         cleared.add(`${step.col},${step.row}`);
+
+        const prevCleared = clearedRef.current;
+        clearedRef.current = new Set(cleared);
+        const newlyClearedSnow = [...cleared].filter(k => !prevCleared.has(k) && allSnow.has(k));
+        if (newlyClearedSnow.length > 0) {
+          setBurstCells(b => {
+            const n = { ...b };
+            newlyClearedSnow.forEach(k => { n[k] = true; });
+            return n;
+          });
+          const toClear = newlyClearedSnow;
+          setTimeout(() => {
+            setBurstCells(b => {
+              const n = { ...b };
+              toClear.forEach(k => { delete n[k]; });
+              return n;
+            });
+          }, 1050);
+        }
+
         setClearedCells(cleared);
 
         // step 0 = initial position (no block yet), step i executes block i-1
@@ -145,17 +172,27 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
               const isSnow    = snowSet.has(key);
               const isCleared = clearedCells.has(key);
               const isRobot   = robotPos.col === col && robotPos.row === row;
+              const showBurst = isSnow && isCleared && burstCells[key];
               return (
                 <div
                   key={key}
                   className={`cell ${isSnow ? 'cell-snow' : 'cell-empty'} ${isCleared ? 'cell-cleared' : ''}`}
                 >
                   {isSnow && !isCleared && <span className="snow-pile">❄</span>}
+                  {showBurst && (
+                    <div className="snow-burst" aria-hidden>
+                      <img className="snow-particle snow-particle--l" src="/snowflake.svg" alt="" />
+                      <img className="snow-particle snow-particle--r" src="/snowflake.svg" alt="" />
+                      <img className="snow-particle snow-particle--ul" src="/snowflake.svg" alt="" />
+                      <img className="snow-particle snow-particle--ur" src="/snowflake.svg" alt="" />
+                    </div>
+                  )}
                   {isRobot && (
-                    <span
+                    <img
                       className="robot-icon"
-                      style={{ transform: 'scaleX(-1)' }}
-                    >🚜</span>
+                      src="/snowbot.svg"
+                      alt=""
+                    />
                   )}
                 </div>
               );

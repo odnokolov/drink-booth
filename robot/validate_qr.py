@@ -15,6 +15,7 @@ import os
 import sys
 import time
 import requests
+from urllib.parse import unquote
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -35,7 +36,8 @@ DRINK_PINS = {
 
 def validate_and_consume(token: str) -> dict | None:
     """Находит запись по токену, проверяет что не использована, помечает как used."""
-    formula = f'Token="{token}"'
+    safe_token = token.replace("\\", "\\\\").replace('"', '\\"')
+    formula = f'Token="{safe_token}"'
     res = requests.get(BASE_URL, headers=HEADERS, params={"filterByFormula": formula})
     res.raise_for_status()
     records = res.json().get("records", [])
@@ -80,20 +82,24 @@ def pour_drink(drink: str):
 def parse_qr(data: str) -> dict | None:
     """Парсит строку QR-кода.
     Форматы:
-      DRINKBOT:<token>:<drink>  — новый формат (токен + напиток)
-      DRINKBOT:<token>          — старый формат (только токен)
-    Возвращает {'token': ..., 'drink': ...} или None.
+      DRINKBOT:<token>:<drink>:<name_urlencoded>  — токен, напиток, имя (percent-encoding)
+      DRINKBOT:<token>:<drink>  — токен + напиток
+      DRINKBOT:<token>          — только токен
+    Возвращает {'token', 'drink', 'name'} или None.
     """
     if not data.startswith("DRINKBOT:"):
         return None
-    parts = data[len("DRINKBOT:"):].split(":", 1)
+    rest = data[len("DRINKBOT:"):]
+    parts = rest.split(":", 2)
     token = parts[0]
     drink = parts[1] if len(parts) > 1 else None
-    return {"token": token, "drink": drink}
+    name_enc = parts[2] if len(parts) > 2 else None
+    name = unquote(name_enc) if name_enc else None
+    return {"token": token, "drink": drink, "name": name}
 
 
 def scan_qr_from_camera() -> dict | None:
-    """Сканирует QR через камеру, возвращает {'token': ..., 'drink': ...}."""
+    """Сканирует QR через камеру, возвращает {'token', 'drink', 'name'}."""
     try:
         import cv2
         from pyzbar.pyzbar import decode
@@ -134,35 +140,35 @@ def main():
         qr = scan_qr_from_camera()
         if qr is None:
             raw = input("  Введи QR-строку или токен: ").strip()
-            qr = parse_qr(raw) or {"token": raw, "drink": None}
+            qr = parse_qr(raw) or {"token": raw, "drink": None, "name": None}
 
         if not qr.get("token"):
             continue
 
         token = qr["token"]
         drink_from_qr = qr.get("drink")
+        name_from_qr = qr.get("name")
 
         print(f"  Токен: {token}")
         if drink_from_qr:
             print(f"  Напиток из QR: {drink_from_qr}")
+        if name_from_qr:
+            print(f"  Имя из QR: {name_from_qr}")
         print("  Проверяю через Airtable...")
 
         try:
             result = validate_and_consume(token)
         except Exception as e:
             print(f"  ⚠  Airtable недоступен: {e}")
-            # Если Airtable недоступен — используем напиток из QR напрямую
-            if drink_from_qr:
-                print(f"  ↩  Используем напиток из QR-кода: {drink_from_qr}")
-                pour_drink(drink_from_qr)
-                print("  ✅ Готово!")
+            print("  ❌ Напиток не выдан — нет соединения с Airtable. Проверьте сеть.")
             continue
 
         if result is None:
             print("  ❌ Токен недействителен или уже использован")
         else:
             drink = result.get("drink") or drink_from_qr
-            print(f"  ✅ Привет, {result['name']}! Напиток: {drink}")
+            who = result.get("name") or name_from_qr or "гость"
+            print(f"  ✅ Привет, {who}! Напиток: {drink}")
             pour_drink(drink)
             print("  ✅ Готово! Напиток налит.")
 

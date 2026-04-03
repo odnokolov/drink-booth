@@ -3,12 +3,10 @@ import StartScreen  from './components/StartScreen';
 import GameScreen   from './components/GameScreen';
 import ContactForm  from './components/ContactForm';
 import QRScreen     from './components/QRScreen';
-import AdminPanel   from './components/AdminPanel';
 import { loadSettings } from './lib/adminSettings';
 import './App.css';
 
 const SCREENS = { START: 'start', GAME: 'game', CONTACT: 'contact', QR: 'qr' };
-const isAdmin = new URLSearchParams(window.location.search).has('admin');
 
 export default function App() {
   const [screen,   setScreen]   = useState(SCREENS.START);
@@ -27,14 +25,6 @@ export default function App() {
     return (
       <div className="app-wrapper">
         <div className="settings-loading">⏳</div>
-      </div>
-    );
-  }
-
-  if (isAdmin) {
-    return (
-      <div className="app-wrapper">
-        <AdminPanel settings={settings} onSave={setSettings} />
       </div>
     );
   }

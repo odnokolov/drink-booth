@@ -4,7 +4,8 @@ import { DRINKS } from '../lib/gameLogic';
 
 export default function QRScreen({ token, name, drink, onRestart }) {
   const drinkInfo = DRINKS.find(d => d.id === drink);
-  const qrValue   = `DRINKBOT:${token}:${drink}`;
+  // token:drink:name — имя в URI-кодировке (кириллица и спецсимволы)
+  const qrValue = `DRINKBOT:${token}:${drink}:${encodeURIComponent(name.trim())}`;
   const canvasRef = useRef(null);
 
   const handleDownload = () => {
