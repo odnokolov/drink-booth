@@ -82,8 +82,8 @@ def pour_drink(drink: str):
 def parse_qr(data: str) -> dict | None:
     """Парсит строку QR-кода.
     Форматы:
-      DRINKBOT:<token>:<drink>:<name_urlencoded>  — токен, напиток, имя (percent-encoding)
-      DRINKBOT:<token>:<drink>  — токен + напиток
+      DRINKBOT:<token>:<drink_urlencoded>:<name_urlencoded> — напиток и имя в percent-encoding (кириллица, emoji)
+      DRINKBOT:<token>:<drink>  — токен + напиток (старый QR: латинский id без кодирования)
       DRINKBOT:<token>          — только токен
     Возвращает {'token', 'drink', 'name'} или None.
     """
@@ -92,8 +92,9 @@ def parse_qr(data: str) -> dict | None:
     rest = data[len("DRINKBOT:"):]
     parts = rest.split(":", 2)
     token = parts[0]
-    drink = parts[1] if len(parts) > 1 else None
+    drink_enc = parts[1] if len(parts) > 1 else None
     name_enc = parts[2] if len(parts) > 2 else None
+    drink = unquote(drink_enc) if drink_enc else None
     name = unquote(name_enc) if name_enc else None
     return {"token": token, "drink": drink, "name": name}
 

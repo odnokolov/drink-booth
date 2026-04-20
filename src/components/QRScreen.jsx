@@ -2,10 +2,11 @@ import { useRef } from 'react';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { DRINKS } from '../lib/gameLogic';
 
-export default function QRScreen({ token, name, drink, onRestart }) {
-  const drinkInfo = DRINKS.find(d => d.id === drink);
-  // token:drink:name — имя в URI-кодировке (кириллица и спецсимволы)
-  const qrValue = `DRINKBOT:${token}:${drink}:${encodeURIComponent(name.trim())}`;
+export default function QRScreen({ token, name, drink, drinks = DRINKS, onRestart }) {
+  const drinkInfo = drinks.find(d => d.id === drink);
+  const drinkForQr = (drinkInfo?.label ?? drink).trim();
+  // токен | напиток (русская подпись + emoji) | имя — оба поля в percent-encoding, чтобы не ломать разбор по ':'
+  const qrValue = `DRINKBOT:${token}:${encodeURIComponent(drinkForQr)}:${encodeURIComponent(name.trim())}`;
   const canvasRef = useRef(null);
 
   const handleDownload = () => {
