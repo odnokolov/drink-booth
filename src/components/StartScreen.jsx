@@ -9,7 +9,7 @@ export default function StartScreen({ onStart }) {
 
       <div className="start-content">
         <div className="robot-hero">
-          <img src="/snowbot.svg" alt="" />
+          <img src="/techbot.svg" alt="" />
         </div>
         <h1 className="start-title">Запрограммируй снегоуборщика!</h1>
         <p className="start-sub">

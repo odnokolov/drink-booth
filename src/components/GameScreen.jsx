@@ -190,7 +190,7 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
                   {isRobot && (
                     <img
                       className="robot-icon"
-                      src="/snowbot.svg"
+                      src="/techbot.svg"
                       alt=""
                     />
                   )}

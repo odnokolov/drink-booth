@@ -99,7 +99,7 @@ export default function TutorialScreen({ onContinue }) {
                   return (
                     <div className="tutorial-cell tutorial-cell--empty" key={`${row}-${col}`}>
                       {step === 1 && row === 0 && col === 1 && <span className="tutorial-move-target">+1</span>}
-                      {robotHere && <img className="tutorial-robot" src="/snowbot.svg" alt="" />}
+                      {robotHere && <img className="tutorial-robot" src="/techbot.svg" alt="" />}
                       {robotHere && (
                         <span className={`tutorial-robot-dir tutorial-robot-dir--${demo.dir}`}>
                           ↑
