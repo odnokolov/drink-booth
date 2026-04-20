@@ -395,6 +395,16 @@ button { font-family: inherit; cursor: pointer; border: none; }
   flex: 1;
 }
 
+.tutorial-start-btn {
+  margin-top: 2px;
+}
+
+.tutorial-progress-note {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
 @media (max-width: 420px) {
   .tutorial-demo {
     grid-template-columns: 1fr;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { BLOCK_TYPES } from '../lib/gameLogic';
 
 const STEPS = [
@@ -44,14 +44,8 @@ const TUTORIAL_SEEN_KEY = 'tutorial_seen_v1';
 export default function TutorialScreen({ onContinue }) {
   const [step, setStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setStep(prev => (prev + 1) % STEPS.length);
-    }, 1800);
-
-    return () => window.clearInterval(timer);
-  }, []);
+  const isFirstStep = step === 0;
+  const isLastStep = step === STEPS.length - 1;
 
   const demo = DEMO[step];
 
@@ -60,6 +54,14 @@ export default function TutorialScreen({ onContinue }) {
       localStorage.setItem(TUTORIAL_SEEN_KEY, '1');
     }
     onContinue();
+  };
+
+  const handlePrev = () => {
+    setStep((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleNext = () => {
+    setStep((prev) => Math.min(STEPS.length - 1, prev + 1));
   };
 
   return (
@@ -128,13 +130,22 @@ export default function TutorialScreen({ onContinue }) {
         </label>
 
         <div className="tutorial-actions">
-          <button className="btn-secondary" onClick={onContinue}>
-            Пропустить
+          <button className="btn-secondary" onClick={handlePrev} disabled={isFirstStep}>
+            ← Назад
           </button>
-          <button className="btn-primary" onClick={handleContinue}>
-            Поехали 🚀
+          <button className="btn-secondary" onClick={handleNext} disabled={isLastStep}>
+            Далее →
           </button>
         </div>
+
+        <button className="btn-primary btn-large tutorial-start-btn" onClick={handleContinue} disabled={!isLastStep}>
+          Поехали 🚀
+        </button>
+        {!isLastStep && (
+          <p className="tutorial-progress-note">
+            Пройди все шаги, чтобы начать игру
+          </p>
+        )}
       </div>
     </div>
   );
