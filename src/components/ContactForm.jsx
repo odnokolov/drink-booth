@@ -61,7 +61,11 @@ export default function ContactForm({ onSubmit, drinks: DRINKS }) {
               onClick={() => setDrink(d.id)}
               disabled={loading}
             >
-              <span className="drink-icon">{d.icon}</span>
+              {d.image ? (
+                <img className="drink-thumb" src={d.image} alt={d.label} decoding="async" />
+              ) : (
+                <span className="drink-icon">{d.icon}</span>
+              )}
               <span className="drink-name">{d.label}</span>
             </button>
           ))}

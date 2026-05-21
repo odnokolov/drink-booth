@@ -28,10 +28,8 @@ HEADERS   = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/
 
 # Drink → relay pin mapping (настрой под свою схему)
 DRINK_PINS = {
-    "coffee": 17,
-    "tea":    18,
-    "juice":  27,
-    "water":  22,
+    "cola": 17,
+    "sprite": 18,
 }
 
 def validate_and_consume(token: str) -> dict | None:

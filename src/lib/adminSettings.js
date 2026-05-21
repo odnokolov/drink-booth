@@ -1,7 +1,7 @@
 import { DRINKS, LEVELS } from './gameLogic';
 
 const SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
-const CACHE_KEY  = 'admin_config_cache';
+const CACHE_KEY  = 'admin_config_cache_v2';
 
 function defaults() {
   return {
@@ -27,12 +27,17 @@ export async function loadSettings() {
       const res  = await fetch(`${SCRIPT_URL}?type=config`);
       const data = await res.json();
       if (data.drinks && data.levels) {
-        writeCache(data);
-        return data;
+        const merged = { ...data, drinks: defaults().drinks };
+        writeCache(merged);
+        return merged;
       }
     } catch {}
   }
-  return readCache() ?? defaults();
+  const cached = readCache();
+  if (cached?.levels) {
+    return { drinks: defaults().drinks, levels: cached.levels };
+  }
+  return defaults();
 }
 
 export async function saveSettings(drinks, levels) {

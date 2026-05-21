@@ -721,7 +721,15 @@ button { font-family: inherit; cursor: pointer; border: none; }
   background: rgba(56,189,248,.1);
 }
 .drink-icon { font-size: 28px; }
-.drink-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.drink-thumb {
+  width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+  border-radius: 8px;
+  pointer-events: none;
+  user-select: none;
+}
+.drink-name { font-size: 13px; font-weight: 600; color: var(--text); text-align: center; line-height: 1.25; }
 
 .form-error {
   color: var(--red);
@@ -821,6 +829,15 @@ button { font-family: inherit; cursor: pointer; border: none; }
 .btn-cases:hover  { opacity: .9; }
 .btn-cases:active { transform: scale(.97); }
 .instr-icon { font-size: 26px; flex-shrink: 0; }
+.instr-thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: var(--surface2);
+  padding: 2px;
+}
 
 .settings-loading {
   flex: 1;

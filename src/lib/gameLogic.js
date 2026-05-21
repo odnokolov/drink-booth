@@ -14,10 +14,18 @@ export const BLOCK_TYPES = [
 ];
 
 export const DRINKS = [
-  { id: 'coffee',  label: 'Кофе ☕',       icon: '☕' },
-  { id: 'tea',     label: 'Чай 🍵',        icon: '🍵' },
-  { id: 'juice',   label: 'Сок 🍊',        icon: '🍊' },
-  { id: 'water',   label: 'Вода 💧',       icon: '💧' },
+  {
+    id: 'cola',
+    label: 'Добрый cola',
+    icon: '🥤',
+    image: '/drinks/cola.png',
+  },
+  {
+    id: 'sprite',
+    label: 'Добрый лимон-лайм',
+    icon: '🥤',
+    image: '/drinks/sprite.png',
+  },
 ];
 
 export const LEVELS = [

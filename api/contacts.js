@@ -6,12 +6,19 @@ const TABLE    = process.env.AIRTABLE_TABLE || 'Contacts';
 const API_KEY  = process.env.AIRTABLE_API_KEY;
 const SHEETS_URL = process.env.GOOGLE_SCRIPT_URL;
 
-function sendToSheets(data) {
+async function sendToSheets(data) {
   if (!SHEETS_URL) return;
-  fetch(SHEETS_URL, {
+
+  const sheetsRes = await fetch(SHEETS_URL, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...data, createdAt: new Date().toISOString() }),
-  }).catch(() => {});
+  });
+
+  if (!sheetsRes.ok) {
+    const body = await sheetsRes.text().catch(() => '');
+    throw new Error(body || `Google Sheets error ${sheetsRes.status}`);
+  }
 }
 
 export default async function handler(req, res) {
@@ -33,12 +40,12 @@ export default async function handler(req, res) {
   const safeDrink   = String(drink).slice(0, 20).trim();
   const token       = nanoid(12);
 
-  if (!BASE_ID || !API_KEY) {
-    sendToSheets({ name: safeName, contact: safeContact, drink: safeDrink, token });
-    return res.status(200).json({ token });
-  }
-
   try {
+    if (!BASE_ID || !API_KEY) {
+      await sendToSheets({ name: safeName, contact: safeContact, drink: safeDrink, token });
+      return res.status(200).json({ token });
+    }
+
     const airtableRes = await fetch(
       `${BASE_URL}/${BASE_ID}/${encodeURIComponent(TABLE)}`,
       {
@@ -65,9 +72,10 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: err?.error?.message || 'Airtable error' });
     }
 
-    sendToSheets({ name: safeName, contact: safeContact, drink: safeDrink, token });
+    await sendToSheets({ name: safeName, contact: safeContact, drink: safeDrink, token });
     return res.status(200).json({ token });
   } catch (err) {
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error(err);
+    return res.status(502).json({ error: err?.message || 'Failed to save contact' });
   }
 }

@@ -71,7 +71,11 @@ export default function QRScreen({ token, name, drink, drinks = DRINKS, onRestar
           <span>Поднеси экран к сканеру</span>
         </div>
         <div className="instruction-step">
-          <span className="instr-icon">{drinkInfo?.icon}</span>
+          {drinkInfo?.image ? (
+            <img className="instr-thumb" src={drinkInfo.image} alt={drinkInfo.label} decoding="async" />
+          ) : (
+            <span className="instr-icon">{drinkInfo?.icon}</span>
+          )}
           <span>Получи {drinkInfo?.label}!</span>
         </div>
       </div>
