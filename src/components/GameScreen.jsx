@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { BLOCK_TYPES, LEVELS, executeProgram } from '../lib/gameLogic';
 
 const STEP_DELAY = 500; // ms per animation step
+const DND_BLOCK   = 'application/drinkbot-block';
+const DND_REORDER = 'application/drinkbot-reorder';
 
 export default function GameScreen({ onWin, levels: adminLevels }) {
   const activeLevels = useMemo(() =>
@@ -31,6 +33,7 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
   const clearedRef  = useRef(new Set());
   const level2FailsRef = useRef(0);
   const [stuckModalOpen, setStuckModalOpen] = useState(false);
+  const [dropSlotActive, setDropSlotActive] = useState(false);
 
   const resetLevel = useCallback((lvl) => {
     setProgram([]);
@@ -190,6 +193,87 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
 
   const uiLocked = running || stuckModalOpen;
 
+  const getDropIndex = useCallback((clientX) => {
+    const el = slotsRef.current;
+    if (!el) return 0;
+    const rect = el.getBoundingClientRect();
+    const x = clientX - rect.left + el.scrollLeft;
+    for (let i = 0; i < program.length; i++) {
+      const b = blockRefs.current[i];
+      if (!b) continue;
+      const br = b.getBoundingClientRect();
+      const left = br.left - rect.left + el.scrollLeft;
+      const mid = left + br.width / 2;
+      if (x < mid) return i;
+    }
+    return program.length;
+  }, [program]);
+
+  const insertBlockAt = useCallback((type, index) => {
+    if (running || stuckModalOpen) return;
+    setProgram(p => {
+      if (p.length >= level.maxBlocks) return p;
+      const clamped = Math.max(0, Math.min(index, p.length));
+      const next = [...p];
+      next.splice(clamped, 0, { id: Date.now() + Math.random(), type });
+      return next;
+    });
+  }, [running, stuckModalOpen, level.maxBlocks]);
+
+  const moveBlock = useCallback((fromIndex, toInsertIndex) => {
+    if (running || stuckModalOpen) return;
+    if (fromIndex === toInsertIndex) return;
+    setProgram(p => {
+      if (fromIndex < 0 || fromIndex >= p.length) return p;
+      const next = [...p];
+      const [item] = next.splice(fromIndex, 1);
+      let dest = toInsertIndex;
+      if (fromIndex < toInsertIndex) dest -= 1;
+      dest = Math.max(0, Math.min(dest, next.length));
+      next.splice(dest, 0, item);
+      return next;
+    });
+  }, [running, stuckModalOpen]);
+
+  useEffect(() => {
+    const clearDrop = () => setDropSlotActive(false);
+    window.addEventListener('dragend', clearDrop);
+    return () => window.removeEventListener('dragend', clearDrop);
+  }, []);
+
+  const handleSlotsDragOver = (e) => {
+    if (uiLocked) return;
+    e.preventDefault();
+    const types = Array.from(e.dataTransfer.types ?? []);
+    const isReorder = types.includes(DND_REORDER);
+    e.dataTransfer.dropEffect = isReorder ? 'move' : 'copy';
+    setDropSlotActive(true);
+  };
+
+  const handleSlotsDragLeave = (e) => {
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setDropSlotActive(false);
+  };
+
+  const handleSlotsDrop = (e) => {
+    if (uiLocked) return;
+    e.preventDefault();
+    const idx = getDropIndex(e.clientX);
+    setDropSlotActive(false);
+
+    const reorder = e.dataTransfer.getData(DND_REORDER);
+    if (reorder !== '') {
+      const from = Number.parseInt(reorder, 10);
+      if (!Number.isNaN(from)) moveBlock(from, idx);
+      return;
+    }
+
+    const blockType = e.dataTransfer.getData(DND_BLOCK) || e.dataTransfer.getData('text/plain');
+    if (blockType && BLOCK_TYPES.some(b => b.id === blockType)) {
+      insertBlockAt(blockType, idx);
+    }
+  };
+
   return (
     <div className="game-screen">
       <header className="game-header">
@@ -247,8 +331,15 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
       <div className="program-area">
         <div className="program-label">
           Программа <span className="block-count">{program.length}/{level.maxBlocks}</span>
+          <span className="program-drag-hint"> — перетащи блок сюда или выбери ниже</span>
         </div>
-        <div className="program-slots" ref={slotsRef}>
+        <div
+          className={`program-slots${dropSlotActive ? ' program-slots--drop-active' : ''}`}
+          ref={slotsRef}
+          onDragOver={handleSlotsDragOver}
+          onDragLeave={handleSlotsDragLeave}
+          onDrop={handleSlotsDrop}
+        >
           {program.map((block, i) => {
             const bt = BLOCK_TYPES.find(b => b.id === block.type);
             const isActive = activeBlock === i;
@@ -257,10 +348,20 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
               <button
                 key={block.id}
                 ref={el => { blockRefs.current[i] = el; }}
+                type="button"
+                draggable={!uiLocked}
+                onDragStart={e => {
+                  if (uiLocked) {
+                    e.preventDefault();
+                    return;
+                  }
+                  e.dataTransfer.setData(DND_REORDER, String(i));
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
                 className={`prog-block${isActive ? ' prog-block--active' : ''}${isError ? ' prog-block--error' : ''}`}
                 style={{ background: bt.color }}
                 onClick={() => removeBlock(block.id)}
-                title="Нажми чтобы удалить"
+                title="Перетащи чтобы переместить, нажми чтобы удалить"
               >
                 <span className="prog-block-num">{i + 1}</span>
                 <span className="prog-block-emoji">{bt.emoji}</span>
@@ -278,8 +379,19 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
         {BLOCK_TYPES.map(bt => (
           <button
             key={bt.id}
+            type="button"
             className="palette-block"
             style={{ background: bt.color, opacity: uiLocked || program.length >= level.maxBlocks ? 0.4 : 1 }}
+            draggable={!(uiLocked || program.length >= level.maxBlocks)}
+            onDragStart={e => {
+              if (uiLocked || program.length >= level.maxBlocks) {
+                e.preventDefault();
+                return;
+              }
+              e.dataTransfer.setData(DND_BLOCK, bt.id);
+              e.dataTransfer.setData('text/plain', bt.id);
+              e.dataTransfer.effectAllowed = 'copy';
+            }}
             onClick={() => addBlock(bt.id)}
             disabled={uiLocked || program.length >= level.maxBlocks}
           >
