@@ -23,7 +23,9 @@ export default function QRScreen({ token, name, drink, drinks = DRINKS, onRestar
     if (navigator.share) {
       try {
         await navigator.share({ title: 'Мой напиток', text: `Мой код: ${token}` });
-      } catch {}
+      } catch {
+        /* отмена share или недоступно */
+      }
     }
   };
 

@@ -18,7 +18,7 @@ export default function ContactForm({ onSubmit, drinks: DRINKS }) {
     try {
       const token = await saveContact({ name: name.trim(), contact: contact.trim(), drink });
       onSubmit({ token, name: name.trim(), drink });
-    } catch (err) {
+    } catch {
       setError('Что-то пошло не так. Попробуй ещё раз.');
       setLoading(false);
     }

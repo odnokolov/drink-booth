@@ -18,7 +18,7 @@ function readCache() {
 }
 
 function writeCache(config) {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(config)); } catch {}
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(config)); } catch { /* ignore */ }
 }
 
 export async function loadSettings() {
@@ -31,7 +31,7 @@ export async function loadSettings() {
         writeCache(merged);
         return merged;
       }
-    } catch {}
+    } catch { /* offline / invalid response */ }
   }
   const cached = readCache();
   if (cached?.levels) {

@@ -654,6 +654,58 @@ button { font-family: inherit; cursor: pointer; border: none; }
 .game-controls .btn-secondary { flex: 1; }
 .game-controls .btn-primary   { flex: 2; }
 
+/* Модалка: 2 неудачи на уровне 2 */
+.game-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.game-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(4px);
+}
+.game-modal {
+  position: relative;
+  width: min(380px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 20px 20px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+.game-modal-title {
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0 0 10px;
+  line-height: 1.25;
+  color: var(--text);
+}
+.game-modal-desc {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.game-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.btn-modal {
+  width: 100%;
+  justify-content: center;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
 /* ─── Contact Form ─────────────────────────────────────────── */
 .contact-screen {
   flex: 1;

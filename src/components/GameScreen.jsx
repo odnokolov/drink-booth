@@ -29,6 +29,8 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
   const slotsRef    = useRef(null);
   const blockRefs   = useRef({});
   const clearedRef  = useRef(new Set());
+  const level2FailsRef = useRef(0);
+  const [stuckModalOpen, setStuckModalOpen] = useState(false);
 
   const resetLevel = useCallback((lvl) => {
     setProgram([]);
@@ -45,7 +47,20 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
     timerRef.current = [];
   }, []);
 
-  useEffect(() => { resetLevel(level); }, [level, resetLevel]);
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- полный сброс поля и модалки при смене уровня */
+    resetLevel(level);
+    level2FailsRef.current = 0;
+    setStuckModalOpen(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [level, resetLevel]);
+
+  useEffect(() => {
+    document.body.style.overflow = stuckModalOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [stuckModalOpen]);
 
   const BLOCK_STEP   = 54;  // 48px block + 6px gap
   const SCROLL_AFTER = 5;  // start scrolling after 6th block (index 5, 0-based)
@@ -68,18 +83,18 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
   }, [activeBlock]);
 
   const addBlock = (type) => {
-    if (running) return;
+    if (running || stuckModalOpen) return;
     if (program.length >= level.maxBlocks) return;
     setProgram(p => [...p, { id: Date.now() + Math.random(), type }]);
   };
 
   const removeBlock = (id) => {
-    if (running) return;
+    if (running || stuckModalOpen) return;
     setProgram(p => p.filter(b => b.id !== id));
   };
 
   const runProgram = () => {
-    if (running || program.length === 0) return;
+    if (running || stuckModalOpen || program.length === 0) return;
     setMessage(null);
     setActiveBlock(null);
     setErrorBlock(null);
@@ -130,10 +145,7 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
           setTimeout(() => {
             setRunning(false);
             setActiveBlock(null);
-            if (error) {
-              setErrorBlock(i - 1);
-              setMessage({ text: error + ' Попробуй снова!', type: 'error' });
-            } else if (success) {
+            if (success) {
               if (levelIdx < activeLevels.length - 1) {
                 setMessage({ text: '✅ Отлично! Следующий уровень...', type: 'success' });
                 setTimeout(() => setLevelIdx(i => i + 1), 1500);
@@ -142,7 +154,19 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
                 setTimeout(() => onWin(), 1000);
               }
             } else {
-              setMessage({ text: '🔴 Не весь снег убран! Попробуй другую программу.', type: 'error' });
+              if (error) {
+                setErrorBlock(i - 1);
+                setMessage({ text: `${error} Попробуй снова!`, type: 'error' });
+              } else {
+                setMessage({ text: '🔴 Не весь снег убран! Попробуй другую программу.', type: 'error' });
+              }
+
+              if (level.id === 2) {
+                level2FailsRef.current += 1;
+                if (level2FailsRef.current >= 2) {
+                  setStuckModalOpen(true);
+                }
+              }
             }
           }, 300);
         }
@@ -152,6 +176,19 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
   };
 
   const snowSet = new Set(level.snow.map(([c, r]) => `${c},${r}`));
+
+  const handleStuckRetry = () => {
+    setStuckModalOpen(false);
+    level2FailsRef.current = 0;
+    resetLevel(level);
+  };
+
+  const handleSkipToDrinks = () => {
+    setStuckModalOpen(false);
+    onWin();
+  };
+
+  const uiLocked = running || stuckModalOpen;
 
   return (
     <div className="game-screen">
@@ -242,9 +279,9 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
           <button
             key={bt.id}
             className="palette-block"
-            style={{ background: bt.color, opacity: running || program.length >= level.maxBlocks ? 0.4 : 1 }}
+            style={{ background: bt.color, opacity: uiLocked || program.length >= level.maxBlocks ? 0.4 : 1 }}
             onClick={() => addBlock(bt.id)}
-            disabled={running || program.length >= level.maxBlocks}
+            disabled={uiLocked || program.length >= level.maxBlocks}
           >
             <span className="palette-emoji">{bt.emoji}</span>
             <span className="palette-label">{bt.label}</span>
@@ -257,14 +294,45 @@ export default function GameScreen({ onWin, levels: adminLevels }) {
         <button
           className="btn-secondary"
           onClick={() => resetLevel(level)}
-          disabled={running}
+          disabled={uiLocked}
         >↺ Сбросить</button>
         <button
           className="btn-primary"
           onClick={runProgram}
-          disabled={running || program.length === 0}
+          disabled={running || stuckModalOpen || program.length === 0}
         >{running ? '⏳ Едет...' : '▶ Запустить'}</button>
       </div>
+
+      {stuckModalOpen && (
+        <div
+          className="game-modal-root"
+          aria-hidden={false}
+        >
+          <div className="game-modal-backdrop" />
+          <div
+            className="game-modal"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="game-stuck-modal-title"
+            aria-describedby="game-stuck-modal-desc"
+          >
+            <h2 id="game-stuck-modal-title" className="game-modal-title">
+              Уровень 2 получился сложным
+            </h2>
+            <p id="game-stuck-modal-desc" className="game-modal-desc">
+              Две попытки подряд не увенчались успехом. Попробуй ещё раз или перейди к выбору напитка и QR-коду.
+            </p>
+            <div className="game-modal-actions">
+              <button type="button" className="btn-secondary btn-modal" onClick={handleStuckRetry}>
+                Попробовать ещё раз
+              </button>
+              <button type="button" className="btn-primary btn-modal" onClick={handleSkipToDrinks}>
+                Перейти к выбору напитка
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
